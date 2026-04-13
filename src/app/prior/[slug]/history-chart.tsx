@@ -83,7 +83,7 @@ export function HistoryChart({
               fontSize: "12px",
             }}
             labelStyle={{ color: "#a1a1aa" }}
-            formatter={(value: number) => [`${value}%`, "Probability"]}
+            formatter={(value) => [`${value}%`, "Probability"]}
           />
           <Line
             type="stepAfter"
