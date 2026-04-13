@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/poll-feeds",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/update-trending",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}

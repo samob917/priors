@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ── Users & Auth ──────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  priors  Prior[]
+  updates PriorUpdate[]
+  apiKeys ApiKey[]
+  votes   Vote[]
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keyHash    String    @unique
+  prefix     String
+  label      String
+  scopes     String // JSON array, e.g. '["read","write"]'
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ── Priors ────────────────────────────────────────────────────
+
+model Prior {
+  id                 String    @id @default(uuid())
+  slug               String    @unique
+  claim              String
+  description        String?
+  category           String    @default("OTHER")
+  currentProbability Float
+  distributionType   String    @default("POINT")
+  distributionParams String    @default("{}")
+  creatorId          String
+  creator            User      @relation(fields: [creatorId], references: [id])
+  viewCount          Int       @default(0)
+  updateCount        Int       @default(0)
+  trendingScore      Float     @default(0)
+  resolvedAt         DateTime?
+  resolution         String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  updates   PriorUpdate[]
+  snapshots PriorSnapshot[]
+  feedLinks DataFeedLink[]
+
+  @@index([trendingScore(sort: Desc)])
+  @@index([category])
+  @@index([creatorId])
+}
+
+// ── Updates & History ─────────────────────────────────────────
+
+model PriorUpdate {
+  id                   String        @id @default(uuid())
+  priorId              String
+  prior                Prior         @relation(fields: [priorId], references: [id], onDelete: Cascade)
+  userId               String?
+  user                 User?         @relation(fields: [userId], references: [id])
+  sourceType           String
+  evidenceDescription  String
+  likelihoodRatio      Float?
+  probabilityBefore    Float
+  probabilityAfter     Float
+  distributionBefore   String?
+  distributionAfter    String?
+  dataFeedLinkId       String?
+  dataFeedLink         DataFeedLink? @relation(fields: [dataFeedLinkId], references: [id])
+  metadata             String?
+  createdAt            DateTime      @default(now())
+
+  votes Vote[]
+
+  @@index([priorId, createdAt(sort: Desc)])
+  @@index([userId])
+}
+
+model PriorSnapshot {
+  id                 String   @id @default(uuid())
+  priorId            String
+  prior              Prior    @relation(fields: [priorId], references: [id], onDelete: Cascade)
+  probability        Float
+  distributionParams String?
+  snapshotDate       DateTime @db.Date
+
+  @@unique([priorId, snapshotDate])
+  @@index([priorId])
+}
+
+// ── Data Feeds ────────────────────────────────────────────────
+
+model DataFeed {
+  id                  String   @id @default(uuid())
+  name                String
+  provider            String
+  baseUrl             String
+  apiKeyEncrypted     String?
+  pollIntervalSeconds Int      @default(300)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+
+  links DataFeedLink[]
+}
+
+model DataFeedLink {
+  id                String    @id @default(uuid())
+  priorId           String
+  prior             Prior     @relation(fields: [priorId], references: [id], onDelete: Cascade)
+  dataFeedId        String
+  dataFeed          DataFeed  @relation(fields: [dataFeedId], references: [id])
+  externalMarketId  String
+  lastPolledAt      DateTime?
+  lastExternalValue Float?
+  dampingFactor     Float     @default(0.3)
+  mappingConfig     String    @default("{}")
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+
+  updates PriorUpdate[]
+
+  @@unique([priorId, dataFeedId, externalMarketId])
+  @@index([isActive, lastPolledAt])
+}
+
+// ── Votes ─────────────────────────────────────────────────────
+
+model Vote {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  priorUpdateId String
+  priorUpdate   PriorUpdate @relation(fields: [priorUpdateId], references: [id], onDelete: Cascade)
+  direction     String
+  createdAt     DateTime    @default(now())
+
+  @@unique([userId, priorUpdateId])
+}
