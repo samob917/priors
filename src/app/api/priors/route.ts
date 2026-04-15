@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { createPriorSchema, searchPriorsSchema } from "@/lib/validation";
+import { generateSearchText } from "@/lib/search";
 import slugify from "slugify";
 
 const PRIOR_SELECT = {
@@ -16,73 +17,8 @@ const PRIOR_SELECT = {
   trendingScore: true,
   createdAt: true,
   updatedAt: true,
+  searchText: true,
 } as const;
-
-// Common synonyms/related terms for better recall
-const SYNONYMS: Record<string, string[]> = {
-  db: ["database", "sql", "postgres", "postgresql", "mysql", "sqlite", "mongo"],
-  database: ["db", "sql", "postgres", "postgresql", "data", "storage"],
-  frontend: ["react", "vue", "angular", "ui", "framework", "web"],
-  backend: ["server", "api", "node", "go", "rust", "python"],
-  stack: ["framework", "language", "tool", "technology"],
-  crypto: ["bitcoin", "btc", "ethereum", "blockchain"],
-  bitcoin: ["btc", "crypto", "cryptocurrency"],
-  ai: ["llm", "gpt", "ml", "machine learning", "artificial intelligence", "agent"],
-  llm: ["ai", "gpt", "language model", "chatbot"],
-  job: ["work", "career", "employment", "hiring", "developer", "task"],
-  remote: ["work from home", "wfh", "distributed", "hybrid", "office"],
-  home: ["remote", "wfh", "office"],
-  money: ["price", "cost", "economy", "economic", "financial"],
-  recession: ["economy", "economic", "downturn", "gdp"],
-  price: ["cost", "value", "worth", "exceed"],
-  programming: ["coding", "software", "development", "developer", "dev"],
-  language: ["typescript", "javascript", "python", "rust", "go", "java"],
-  framework: ["react", "next", "nextjs", "vue", "angular", "svelte"],
-};
-
-/**
- * Score a prior against a search query using word-level matching.
- * Returns a score > 0 for matches, 0 for no match.
- */
-function scorePrior(
-  prior: { claim: string; description: string | null; category: string },
-  queryWords: string[]
-): number {
-  const claimLower = prior.claim.toLowerCase();
-  const descLower = (prior.description ?? "").toLowerCase();
-  const catLower = prior.category.toLowerCase();
-  const fullText = `${claimLower} ${descLower} ${catLower}`;
-
-  let score = 0;
-
-  for (const word of queryWords) {
-    // Direct word match in claim (highest weight)
-    if (claimLower.includes(word)) {
-      score += 10;
-    }
-    // Direct word match in description
-    if (descLower.includes(word)) {
-      score += 5;
-    }
-    // Category match
-    if (catLower.includes(word)) {
-      score += 3;
-    }
-
-    // Synonym expansion: check if any synonym of the query word appears
-    const syns = SYNONYMS[word];
-    if (syns) {
-      for (const syn of syns) {
-        if (fullText.includes(syn)) {
-          score += 4; // synonym match is worth less than direct match
-          break; // only count best synonym match per query word
-        }
-      }
-    }
-  }
-
-  return score;
-}
 
 /**
  * Tokenize a query: lowercase, split on spaces/punctuation, filter noise words.
@@ -104,6 +40,29 @@ function tokenize(query: string): string[] {
     .toLowerCase()
     .split(/[\s,;:!?\-/]+/)
     .filter((w) => w.length > 1 && !stopWords.has(w));
+}
+
+/**
+ * Score a prior against search query words.
+ * Uses the enriched searchText (from Claude) if available, otherwise
+ * falls back to claim + description matching.
+ */
+function scorePrior(
+  prior: { claim: string; description: string | null; category: string; searchText: string },
+  queryWords: string[]
+): number {
+  const claimLower = prior.claim.toLowerCase();
+  const searchLower = prior.searchText || `${claimLower} ${(prior.description ?? "").toLowerCase()} ${prior.category.toLowerCase()}`;
+
+  let score = 0;
+  for (const word of queryWords) {
+    // Direct claim match (highest weight)
+    if (claimLower.includes(word)) score += 10;
+    // Match in enriched search text (includes synonyms, related questions, etc.)
+    if (searchLower.includes(word)) score += 5;
+  }
+
+  return score;
 }
 
 export async function GET(request: NextRequest) {
@@ -217,6 +176,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Generate enriched search text using Claude (async, non-blocking fallback)
+  let searchText = `${claim} ${description ?? ""} ${category}`.toLowerCase();
+  try {
+    searchText = await generateSearchText(claim, description, category);
+  } catch {
+    // Fallback already set above
+  }
+
   const prior = await prisma.prior.create({
     data: {
       slug,
@@ -226,6 +193,7 @@ export async function POST(request: NextRequest) {
       currentProbability: initialProbability,
       distributionType,
       distributionParams: distributionParams ? JSON.stringify(distributionParams) : "{}",
+      searchText,
       creatorId: auth.userId,
     },
   });

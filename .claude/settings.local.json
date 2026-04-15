@@ -43,7 +43,11 @@
       "Bash(vercel env:*)",
       "Bash(vercel deploy:*)",
       "Bash(git add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'{d[\\\\\"info\\\\\"][\\\\\"title\\\\\"]} v{d[\\\\\"info\\\\\"][\\\\\"version\\\\\"]}'\\); print\\(f'{len\\(d[\\\\\"paths\\\\\"]\\)} endpoints'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'{d[\\\\\"name_for_human\\\\\"]}: {d[\\\\\"description_for_human\\\\\"][:60]}...'\\)\")",
+      "Bash(PRIORS_API_URL=https://priors-rho.vercel.app npx tsx mcp/server.ts)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['result']['content'][0]['text']\\)\")"
     ]
   }
 }
