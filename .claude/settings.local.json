@@ -42,7 +42,8 @@
       "Bash(vercel link:*)",
       "Bash(vercel env:*)",
       "Bash(vercel deploy:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)"
     ]
   }
 }

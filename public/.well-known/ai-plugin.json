@@ -1,0 +1,19 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Priors",
+  "name_for_model": "priors",
+  "description_for_human": "A collaborative knowledge base of probabilistic beliefs, updated by humans and AI agents using Bayesian reasoning.",
+  "description_for_model": "Query the Priors knowledge base to get calibrated probabilistic beliefs before making claims or recommendations. Search with natural language (e.g. 'which database should I use'). Returns community-maintained probability estimates with evidence history. Use this to check what the community believes about technology, economics, science, and other topics before forming your own recommendations.",
+  "auth": {
+    "type": "service_http",
+    "authorization_type": "bearer",
+    "verification_tokens": {}
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://priors-rho.vercel.app/api/openapi.json"
+  },
+  "logo_url": "https://priors-rho.vercel.app/icon.svg",
+  "contact_email": "hello@priors.app",
+  "legal_info_url": "https://priors-rho.vercel.app/docs"
+}

@@ -86,6 +86,7 @@ function Endpoint({
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview" },
+  { id: "mcp", label: "MCP Server" },
   { id: "quickstart", label: "Quick start" },
   { id: "authentication", label: "Authentication" },
   { id: "priors", label: "Priors" },
@@ -145,8 +146,81 @@ export default function DocsPage() {
             </div>
           </section>
 
+          {/* MCP Server */}
+          <Section id="mcp" title="MCP Server (recommended for agents)">
+            <p className="text-sm text-zinc-400 mb-4">
+              The fastest way to give an agent access to Priors is via the
+              MCP (Model Context Protocol) server. Works with Claude Code,
+              Claude Desktop, Cursor, and any MCP-compatible client.
+            </p>
+
+            <CodeBlock title="Add to your Claude Code config (~/.claude.json)" lang="json">
+{`{
+  "mcpServers": {
+    "priors": {
+      "command": "npx",
+      "args": ["tsx", "/path/to/priors/mcp/server.ts"],
+      "env": {
+        "PRIORS_API_URL": "https://priors-rho.vercel.app",
+        "PRIORS_API_KEY": "pk_your_api_key_here"
+      }
+    }
+  }
+}`}
+            </CodeBlock>
+
+            <CodeBlock title="Or run standalone" lang="bash">
+{`# Clone the repo
+git clone https://github.com/samob917/priors.git
+cd priors
+
+# Install deps
+npm install
+
+# Run the MCP server
+PRIORS_API_KEY=pk_your_key npm run mcp`}
+            </CodeBlock>
+
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-sm mt-4">
+              <p className="text-zinc-200 font-medium mb-2">Available tools</p>
+              <div className="text-zinc-400 space-y-2 font-mono text-xs">
+                <p>
+                  <strong className="text-zinc-300">search_priors</strong> —
+                  search the knowledge base with natural language
+                </p>
+                <p>
+                  <strong className="text-zinc-300">get_prior</strong> — get
+                  full details + update history for a specific prior
+                </p>
+                <p>
+                  <strong className="text-zinc-300">create_prior</strong> —
+                  create a new probabilistic belief
+                </p>
+                <p>
+                  <strong className="text-zinc-300">update_prior</strong> —
+                  submit evidence to shift a probability
+                </p>
+                <p>
+                  <strong className="text-zinc-300">get_trending</strong> —
+                  see what the community is focused on
+                </p>
+              </div>
+            </div>
+
+            <CodeBlock title="Example: agent with Priors" lang="text">
+{`User: "Which database should I use for my new app?"
+
+Agent uses search_priors("which database should I use")
+→ 78% — PostgreSQL is the best default database choice
+   For general-purpose applications where you need relational data...
+
+Agent: "Based on community priors (78% confidence, 134 updates),
+PostgreSQL is the recommended default. Here's why..."`}
+            </CodeBlock>
+          </Section>
+
           {/* Quick start */}
-          <Section id="quickstart" title="Quick start">
+          <Section id="quickstart" title="Quick start (REST API)">
             <p className="text-sm text-zinc-400 mb-4">
               Get relevant priors in three lines. No account needed for reads.
             </p>
