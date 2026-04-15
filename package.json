@@ -12,7 +12,10 @@
     "db:migrate": "npx prisma migrate dev",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:reset": "npx prisma migrate reset",
-    "mcp": "npx tsx mcp/server.ts"
+    "mcp": "npx tsx mcp/server.ts",
+    "agent:auto-prior": "npx tsx agents/auto-prior.ts",
+    "agent:tweet": "npx tsx agents/twitter-bot.ts",
+    "agent:tweet:dry": "DRY_RUN=true npx tsx agents/twitter-bot.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

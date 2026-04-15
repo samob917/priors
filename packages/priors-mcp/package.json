@@ -1,0 +1,40 @@
+{
+  "name": "priors-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Priors — a collaborative Bayesian belief knowledge base. Gives AI agents access to community-maintained probabilistic beliefs.",
+  "main": "dist/server.js",
+  "bin": {
+    "priors-mcp": "dist/server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "priors",
+    "bayesian",
+    "beliefs",
+    "ai-agent",
+    "claude",
+    "knowledge-base"
+  ],
+  "author": "samob917",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samob917/priors"
+  }
+}
